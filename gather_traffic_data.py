@@ -108,6 +108,10 @@ try:
     for exp in range(1000):
         save_objs = []
         
+        ignore_lights = [ np.clip(np.random.normal(0.0, 1.0), 0.0, 6.0) for i in range(agent_num) ]
+        ignore_signs = [ np.clip(np.random.normal(0.0, 1.0), 0.0, 6.0) for i in range(agent_num) ]
+        ignore_vehicles = [ np.clip(np.random.normal(0.0, 1.0), 0.0, 6.0) for i in range(agent_num) ]
+
         distance_to_leading_vehicle = [ np.random.uniform(5.0, 15.0) for i in range(agent_num) ]
         vehicle_lane_offset = [ np.random.uniform(-0.3, 0.3) for i in range(agent_num) ]
         vehicle_speed = [ np.random.uniform(-50.0, 50.0) for i in range(agent_num) ]
@@ -157,9 +161,9 @@ try:
                 traffic_manager.distance_to_leading_vehicle(actor, distance_to_leading_vehicle[i] )
                 traffic_manager.vehicle_lane_offset(actor, vehicle_lane_offset[i])
                 traffic_manager.vehicle_percentage_speed_difference(actor, vehicle_speed[i])
-                traffic_manager.ignore_lights_percentage(actor, 0)
-                traffic_manager.ignore_signs_percentage(actor, 0)
-                traffic_manager.ignore_vehicles_percentage(actor, 0)
+                traffic_manager.ignore_lights_percentage(actor, ignore_lights[i])
+                traffic_manager.ignore_signs_percentage(actor, ignore_signs[i])
+                traffic_manager.ignore_vehicles_percentage(actor, ignore_vehicles[i])
                 
                 
             steer_add = [ 0. for _ in range(agent_num) ]
@@ -261,11 +265,12 @@ try:
 
 
             save_obj = {}
-            save_obj["params"] = [ [distance_to_leading_vehicle[i], vehicle_lane_offset[i], vehicle_speed[i], impatient_lane_change[i], steering_ratio[i], vel_disp[i], lane_disp[i]] for i in range(agent_num) ]
+            save_obj["params"] = [ [distance_to_leading_vehicle[i], vehicle_lane_offset[i], vehicle_speed[i], impatient_lane_change[i], 
+                                steering_ratio[i], vel_disp[i], lane_disp[i], ignore_lights[i], ignore_signs[i], ignore_vehicles[i]] for i in range(agent_num) ]
             save_obj["state_vectors"] = state_vectors
             save_obj["control_vectors"] = control_vectors
             save_objs.append(save_obj)
-        with open("data/gathered_from_npc1/data_" + str(exp) + ".pkl","wb") as fw:
+        with open("data/gathered_from_npc2_hard/data_" + str(exp) + ".pkl","wb") as fw:
             pickle.dump(save_objs, fw)
 
 

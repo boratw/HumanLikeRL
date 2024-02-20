@@ -2,7 +2,7 @@
 import carla
 import numpy as np
 import random
-from enum import Enum
+from enum import IntEnum
 from collections import deque
 import pickle
 
@@ -244,7 +244,7 @@ class RouteTracer(object):
 
 
         
-class LaneType(Enum):
+class LaneType(IntEnum):
     Follow = 0
     Straight = 1
     Left = 2

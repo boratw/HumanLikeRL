@@ -6,7 +6,7 @@ from network.bayesian_mlp import Bayesian_FC, FC, Variational_FC
 
 
 class DrivingStyleLearner():
-    def __init__(self, name=None, reuse=False, state_len = 59, nextstate_len = 2, action_len=31, regularizer_weight= 0.0001,
+    def __init__(self, name=None, reuse=False, state_len = 59, prevstate_len=2, nextstate_len = 2, action_len=31, regularizer_weight= 0.0001,
                  learner_lr = 0.001,  sigma_bias=-1.0, bayesian_out_regularizer = 0.01, isTraining=True):
 
         if name == None:
@@ -24,8 +24,8 @@ class DrivingStyleLearner():
             self.layer_input_dropout = tf.placeholder(tf.float32, None)
 
             with tf.variable_scope("DiscreteLearner", reuse=reuse):
-                self.action_h1 = Bayesian_FC(self.layer_input_state, state_len, 128, input_dropout = self.layer_input_dropout, 
-                                        output_nonln = tf.nn.leaky_relu, name="action_h1", sigma_bias=sigma_bias)
+                self.action_h1 = FC(self.layer_input_state, state_len, 128, input_dropout = self.layer_input_dropout, 
+                                        output_nonln = tf.nn.leaky_relu, name="action_h1")
                 self.action_h2 = FC(self.action_h1.layer_output, 128, action_len, input_dropout = None, 
                                         output_nonln = None, name="action_output")
                 self.action_output_raw = self.action_h2.layer_output
@@ -37,9 +37,9 @@ class DrivingStyleLearner():
                     
                 route_input_action = tf.reshape(tf.cast(self.layer_input_action, tf.float32), [-1, 1]) * 2. / (action_len - 1) - 1.
                 route_input = tf.concat([self.layer_input_state, route_input_action], axis=1)
-                self.route_h1 = Bayesian_FC(route_input, state_len + 1, 512, input_dropout = self.layer_input_dropout, 
+                self.route_h1 = FC(route_input, state_len + 1, 512, input_dropout = self.layer_input_dropout, 
                                     output_nonln = tf.nn.leaky_relu, name="route_h1")
-                self.route_h2 = Bayesian_FC(self.route_h1.layer_output, 512, 256, input_dropout = self.layer_input_dropout, 
+                self.route_h2 = FC(self.route_h1.layer_output, 512, 256, input_dropout = self.layer_input_dropout, 
                                     output_nonln = tf.nn.leaky_relu, name="route_h2")
                 self.route_h3 = FC(self.route_h2.layer_output, 256, nextstate_len, input_dropout = None, 
                                     output_nonln = None, name="route_h3")
@@ -51,10 +51,8 @@ class DrivingStyleLearner():
                                                     [self.action_h1, self.action_h2]])
                     
                     self.action_optimizer = tf.train.AdamOptimizer(learner_lr)
-                    self.action_train_gradient = self.action_optimizer.compute_gradients(loss = self.action_error
+                    self.action_train = self.action_optimizer.minimize(loss = self.action_error
                                                                     + self.action_reg_loss * regularizer_weight)
-                    action_train_gradient_clipped = [ ( None if g is None else tf.clip_by_value(g, -0.1, 0.1), v) for g, v in self.action_train_gradient]
-                    self.action_train = self.action_optimizer.apply_gradients(action_train_gradient_clipped)
 
 
                     self.route_error = tf.reduce_mean((self.route_output - self.layer_input_nextstate) ** 2, axis=0)
@@ -62,10 +60,8 @@ class DrivingStyleLearner():
                                                     [self.route_h1, self.route_h2, self.route_h3]])
                     
                     self.route_optimizer = tf.train.AdamOptimizer(learner_lr)
-                    self.route_train_gradient = self.route_optimizer.compute_gradients(loss = self.route_error
+                    self.route_train = self.route_optimizer.minimize(loss = self.route_error
                                                                     + self.route_reg_loss * regularizer_weight)
-                    route_train_gradient_clipped = [ ( None if g is None else tf.clip_by_value(g, -0.1, 0.1), v) for g, v in self.route_train_gradient]
-                    self.route_train = self.route_optimizer.apply_gradients(route_train_gradient_clipped)
 
                     
                 
